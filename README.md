@@ -96,11 +96,11 @@ Manual server hardening is error-prone, inconsistent, and hard to audit.
 ## 🗺️ Roadmap
 
 - [x] Project skeleton, README, LICENSE, CI baseline
-- [ ] Core Linux scripts (SSH, UFW, fail2ban, sysctl, auditd)
-- [ ] Core Windows scripts (SMBv1, RDP, Firewall, Audit, Defender)
-- [ ] Ansible role parity
-- [ ] OpenSCAP / CIS-CAT report generation
-- [ ] Rollback via state snapshots
+- [x]Core Linux scripts (SSH, UFW, fail2ban, sysctl, auditd)
+- [x] Core Windows scripts (SMBv1, RDP, Firewall, Audit, Defender)
+- [x] Ansible role parity
+- [x] OpenSCAP / CIS-CAT report generation
+- [x] Rollback via state snapshots
 
 ## 🤝 Contributing
 
