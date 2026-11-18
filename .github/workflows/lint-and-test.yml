@@ -1,0 +1,59 @@
+name: Lint & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: ShellCheck (Bash)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: ./linux
+
+  lint-powershell:
+    name: PSScriptAnalyzer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+      - name: Lint PowerShell
+        shell: pwsh
+        run: |
+          $results = Invoke-ScriptAnalyzer -Path ./windows -Recurse -Severity Error,Warning
+          $results | Format-Table -AutoSize
+          if ($results) { exit 1 }
+
+  bats:
+    name: Bats (Bash tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        run: sudo apt-get update && sudo apt-get install -y bats
+      - name: Run Bats tests
+        run: bats tests/bats/
+
+  pester:
+    name: Pester (PowerShell tests)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pester
+        shell: pwsh
+        run: Install-Module Pester -Force -Scope CurrentUser -MinimumVersion 5.0
+      - name: Run Pester
+        shell: pwsh
+        run: |
+          $r = Invoke-Pester -Path ./tests/pester -PassThru -Output Detailed
+          if ($r.FailedCount -gt 0) { exit 1 }

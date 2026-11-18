@@ -1,0 +1,4 @@
+# .shellcheckrc — project-wide ShellCheck settings
+shell=bash
+external-sources=true
+severity=warning
