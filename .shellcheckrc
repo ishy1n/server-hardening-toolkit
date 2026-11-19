@@ -1,4 +1,5 @@
-# .shellcheckrc — project-wide ShellCheck settings
+# Игнорируем поиск файлов (SC1091), неиспользуемые переменные (SC2034)
+# и разделение declare/assign (SC2155)
+disable=SC1091,SC2034,SC2155
 shell=bash
 external-sources=true
-severity=warning

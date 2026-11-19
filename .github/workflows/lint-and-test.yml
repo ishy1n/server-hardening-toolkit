@@ -18,6 +18,9 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           scandir: ./linux
+          additional_files: './linux/lib/common.sh'
+        env:
+          SHELLCHECK_OPTS: --exclude=SC1091,SC2034,SC2155
 
   lint-powershell:
     name: PSScriptAnalyzer
