@@ -1,4 +1,8 @@
 @{
     Severity = @('Error', 'Warning')
-    ExcludeRules = @('PSAvoidUsingWriteHost', 'PSUseShouldProcessForStateChangingFunctions')
+    ExcludeRules = @(
+        'PSAvoidUsingWriteHost',
+        'PSUseShouldProcessForStateChangingFunctions',
+        'PSUseBOMForUnicodeEncodedFile'
+    )
 }

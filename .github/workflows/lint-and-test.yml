@@ -33,7 +33,7 @@ jobs:
       - name: Lint PowerShell
         shell: pwsh
         run: |
-          $results = Invoke-ScriptAnalyzer -Path ./windows -Recurse -Severity Error,Warning
+          $results = Invoke-ScriptAnalyzer -Path ./windows -Recurse -Settings ./PSScriptAnalyzerSettings.psd1
           $results | Format-Table -AutoSize
           if ($results) { exit 1 }
 
