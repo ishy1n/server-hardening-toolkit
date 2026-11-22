@@ -1,111 +1,149 @@
-# Server Hardening Toolkit
+<div align="center">
 
-[![CI](https://github.com/ishy1n/server-hardening-toolkit/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/ishy1n/server-hardening-toolkit/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/ishy1n/server-hardening-toolkit/releases)
-
-**Idempotent, auditable hardening scripts for Linux and Windows servers, mapped to CIS Benchmarks.**
+# 🛡️ Server Hardening Toolkit
 
 **Идемпотентные скрипты харденинга Linux и Windows с аудитом и привязкой к CIS Benchmarks.**
 
+[![CI](https://github.com/ishy1n/server-hardening-toolkit/actions/workflows/lint-and-test.yml/badge.svg)](https://github.com/ishy1n/server-hardening-toolkit/actions/workflows/lint-and-test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CIS Ubuntu 24.04](https://img.shields.io/badge/CIS-Ubuntu%2024.04%20v1.0.0-blue)](docs/cis-mapping-linux.md)
+[![CIS WS2022](https://img.shields.io/badge/CIS-WS2022%20v5.0.0-blue)](docs/cis-mapping-linux.md)
+
+</div>
+
 ---
 
-## 🎯 Problem / Проблема
+## 🎯 Проблема
 
-Manual server hardening is error-prone, inconsistent, and hard to audit.
 Ручной харденинг серверов подвержен ошибкам, делается непоследовательно и плохо аудируется.
 
-## 💡 Solution / Решение
+## 💡 Решение
 
-- **CIS-aligned controls** with dry-run preview
-- **Structured logging** of every action
-- **Fail-safe** execution
-- **Tested in CI**: ShellCheck, PSScriptAnalyzer, Bats, Pester
+- **CIS-aligned controls** — каждый скрипт привязан к конкретным пунктам бенчмарка
+- **Dry-run first** — предпросмотр изменений до применения (`--dry-run` / `-DryRun`)
+- **Idempotent** — повторный запуск не ломает конфигурацию
+- **Fail-safe** — backup + валидация (`sshd -t`) с автоматическим откатом
+- **Structured logging** — каждое действие пишется в лог
+- **Tested in CI** — ShellCheck, PSScriptAnalyzer, Bats, Pester
 
-## 🧰 Stack / Стек
+## 📁 Структура
 
-| Layer | Tools |
+```text
+server-hardening-toolkit/
+├── linux/
+│   ├── lib/common.sh            # общие helpers: логирование, parse_mode, set_kv
+│   ├── 01-ssh-hardening.sh      # CIS 5.1.x — SSH
+│   ├── 02-firewall-ufw.sh       # CIS 3.5.x — UFW default-deny
+│   ├── 03-fail2ban-setup.sh     # CIS 5.2.x — anti-bruteforce
+│   └── 04-sysctl-hardening.sh   # CIS 1.5.x — kernel/network
+├── windows/
+│   ├── lib/Common.psm1          # Write-HardeningLog, Assert-Administrator
+│   ├── Disable-SMBv1.ps1        # CIS 2.3.1.1 — SMBv1 off + signing/encryption
+│   └── Set-RDPHardening.ps1     # CIS 2.3.11.x — NLA, encryption, timeouts
+├── ansible/                     # опциональная Ansible-обёртка (паритет со скриптами)
+├── tests/
+│   ├── bats/                    # smoke-тесты Bash-скриптов
+│   └── pester/                  # smoke-тесты PowerShell-скриптов
+├── docs/
+│   ├── architecture.md          # общая архитектура
+│   └── cis-mapping-linux.md     # полная таблица соответствия CIS
+├── .github/workflows/           # CI: lint + test на каждый push/PR
+└── README.md
+```
+
+## ⚙️ Требования
+
+| Платформа | Минимум |
 |---|---|
-| Linux hardening | Bash, UFW, fail2ban, auditd, sysctl |
-| Windows hardening | PowerShell 7+, Registry / GPO, Defender, Firewall |
-| Automation | Ansible (optional) |
-| Linting | ShellCheck, PSScriptAnalyzer |
-| Testing | Bats-core, Pester |
-| CI | GitHub Actions |
+| Linux | Ubuntu 22.04/24.04 (bash 4+, root), пакеты: `openssh-server`, `ufw`, `fail2ban` |
+| Windows | Windows Server 2016+ / Windows 10+, PowerShell 7+, запуск от Administrator |
 
-## 🚀 Quick Start / Быстрый старт
+## 🚀 Быстрый старт
+
+> ⚠️ Всегда начинайте с dry-run и тестируйте на стенде до production.
 
 ### Linux
 
-    git clone https://github.com/ishy1n/server-hardening-toolkit.git
-    cd server-hardening-toolkit
-    sudo ./linux/01-ssh-hardening.sh --dry-run
-    sudo ./linux/01-ssh-hardening.sh --apply
+```bash
+git clone https://github.com/ishy1n/server-hardening-toolkit.git
+cd server-hardening-toolkit
+
+# 1. Предпросмотр
+sudo ./linux/01-ssh-hardening.sh --dry-run
+
+# 2. Применение (автоматически делает backup и валидирует sshd -t)
+sudo ./linux/01-ssh-hardening.sh --apply
+
+# Остальные скрипты — в любом порядке
+sudo ./linux/02-firewall-ufw.sh --apply      # SSH_PORT=2222 для нестандартного порта
+sudo ./linux/03-fail2ban-setup.sh --apply    # BAN_TIME=1h FIND_TIME=10m MAX_RETRY=5
+sudo ./linux/04-sysctl-hardening.sh --apply
+```
 
 ### Windows (PowerShell 7+, Run as Administrator)
 
-    git clone https://github.com/ishy1n/server-hardening-toolkit.git
-    Set-Location server-hardening-toolkit\windows
-    .\Disable-SMBv1.ps1 -DryRun
-    .\Disable-SMBv1.ps1 -Apply
+```powershell
+git clone https://github.com/ishy1n/server-hardening-toolkit.git
+Set-Location server-hardening-toolkit\windows
 
-## 📋 CIS Benchmark Mapping / Соответствие CIS
+.\Disable-SMBv1.ps1 -DryRun     # предпросмотр
+.\Disable-SMBv1.ps1 -Apply      # применение (SMB1Protocol feature → reboot может быть нужен)
 
-Полные таблицы: docs/cis-mapping-linux.md, docs/cis-mapping-windows.md.
+.\Set-RDPHardening.ps1 -Apply
+```
 
-### Linux (пример)
+Логи: `/var/log/hardening.log` (Linux), `%ProgramData%\hardening.log` (Windows).
 
-| Script | CIS Benchmark | Controls |
+## 📋 Соответствие CIS
+
+Полная таблица: [docs/cis-mapping-linux.md](docs/cis-mapping-linux.md).
+
+### Linux (CIS Ubuntu 24.04 v1.0.0)
+
+| Script | Controls | Что делает |
 |---|---|---|
-| 01-ssh-hardening.sh | CIS Ubuntu 24.04 v1.0.0 | 5.1.x |
-| 02-firewall-ufw.sh | CIS Ubuntu 24.04 v1.0.0 | 3.5.x |
-| 03-fail2ban-setup.sh | CIS Ubuntu 24.04 v1.0.0 | 5.2.x |
-| 04-sysctl-hardening.sh | CIS Ubuntu 24.04 v1.0.0 | 1.5.x |
-| 05-auditd-setup.sh | CIS Ubuntu 24.04 v1.0.0 | 4.1.x |
-| 06-disable-services.sh | CIS Ubuntu 24.04 v1.0.0 | 2.1.x |
+| `01-ssh-hardening.sh` | 5.1.x | root login off, ключи вместо паролей, MaxAuthTries=4, X11 off, verbose logging |
+| `02-firewall-ufw.sh` | 3.5.1.x | UFW default-deny incoming, allow SSH, logging on |
+| `03-fail2ban-setup.sh` | 5.2.x | jail.local: bantime=1h, maxretry=5, sshd jail |
+| `04-sysctl-hardening.sh` | 1.5.x | ip_forward off, redirects off, rp_filter, SYN cookies, martians logging |
 
-### Windows (пример)
+### Windows (CIS WS2022 v5.0.0)
 
-| Script | CIS Benchmark | Controls |
+| Script | Controls | Что делает |
 |---|---|---|
-| Disable-SMBv1.ps1 | CIS WS2022 v5.0.0 | 2.3.1.1 |
-| Set-RDPHardening.ps1 | CIS WS2022 v5.0.0 | 2.3.11.x |
-| Set-AuditPolicy.ps1 | CIS WS2022 v5.0.0 | 17.x |
-| Set-WindowsFirewall.ps1 | CIS WS2022 v5.0.0 | 9.x |
-| Set-DefenderBaseline.ps1 | CIS WS2022 v5.0.0 | 18.x |
+| `Disable-SMBv1.ps1` | 2.3.1.1 | SMB1=0 (server+workstation), required signing, encrypted data, optional feature off |
+| `Set-RDPHardening.ps1` | 2.3.11.x | NLA required, High encryption, drive/printer redirection off, idle timeout 15 мин |
 
-## 🧪 Testing / Тестирование
+## 🧪 Тестирование
 
-    bats tests/bats/
-    Invoke-Pester -Path tests/pester/
+```bash
+# Bash
+bats tests/bats/
 
-## 🛡️ Security Disclaimer / Дисклеймер
+# PowerShell
+Invoke-Pester -Path tests/pester/ -Output Detailed
+```
 
-> **Use only on systems you own or have explicit permission to harden.**
+CI на каждый push/PR: ShellCheck → PSScriptAnalyzer → Bats → Pester ([workflow](.github/workflows/lint-and-test.yml)).
+
+## 🧰 Ansible (optional)
+
+```bash
+ansible-playbook -i inventory.ini ansible/site.yml
+```
+
+Роль `hardening` дублирует логику скриптов для fleet-управления; defaults в `ansible/roles/hardening/defaults/main.yml` (порт SSH, MaxAuthTries, fail2ban-пороги — переопределяются через `group_vars`/`-e`).
+
+## 🛡️ SДисклеймер
+
 > **Используйте только на своих стендах или там, где есть письменное разрешение.**
-> Always run --dry-run first and test in a lab before production.
+> Скрипты меняют SSH/firewall — ошибка может отрезать вам доступ. Dry-run → стенд → backup → production.
 
-## 🧠 What I Learned / Skills Demonstrated
-
-- Translating CIS Benchmark controls into idempotent, testable scripts
-- Safe-by-default automation (dry-run, fail-fast, structured logging)
-- Cross-platform hardening (Bash + PowerShell) with unified logging
-- CI for infrastructure code (ShellCheck, PSScriptAnalyzer, Bats, Pester)
-- Conventional Commits + PR/Issue templates
-
-## 🗺️ Roadmap
-
-- [x] Project skeleton, README, LICENSE, CI baseline
-- [x] Core Linux scripts (SSH, UFW, fail2ban, sysctl, auditd)
-- [x] Core Windows scripts (SMBv1, RDP, Firewall, Audit, Defender)
-- [x] Ansible role parity
-- [x] OpenSCAP / CIS-CAT report generation
-- [x] Rollback via state snapshots
 
 ## 🤝 Contributing
 
-See CONTRIBUTING.md. Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Commits follow [Conventional Commits](https://www.conventionalcommits.org/). PR checklist: dry-run support, логирование, валидация, зелёный CI, обновлённый README/CIS-mapping.
 
 ## 📄 License
 
-MIT — see LICENSE.
+[MIT](LICENSE) — используйте на свой страх и риск.
