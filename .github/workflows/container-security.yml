@@ -29,7 +29,7 @@ jobs:
         run: docker build -t hardening-toolkit:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'hardening-toolkit:${{ github.sha }}'
           format: 'sarif'
@@ -39,7 +39,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Run Trivy misconfiguration scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
           scan-ref: '.'
